@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ==========================================
+// USER MODEL
+// ==========================================
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  avatar    String?  // Supabase bucket se image ka URL aayega
+  about       String?  // User ka short bio / description
+  phone       String?  // Contact Number
+  address     String?  // Creator Address
+  legalName   String?  // Official Name for Payments
+  instagram   String?  // Social Link
+  youtube     String?  // Social Link
+  category    String?  // Teaching Category
+  experience  String?  // Years of Experience
+  upiId       String?  // Creator payout UPI
+  bankAccount String?  // Creator payout Bank Account details
+  role        Role     @default(STUDENT)
+  isVerified  Boolean  @default(false) // For Creator Verification by Admin
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchases Purchase[] // User ne jo courses kharide
+  progress  Progress[] // User ne kaunsi videos dekh li
+  cart      Cart?      // User ka cart
+  courses   Course[]   // Creator ke courses
+}
+
+enum Role {
+  STUDENT
+  CREATOR
+  ADMIN
+}
+
+// ==========================================
+// COURSE MODEL
+// ==========================================
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  outcomes    String[] // What You'll Learn bullet points
+  price       Float    // Ex: 499.0
+  category    String   // Ex: 'business', 'finance', 'ncert'
+  thumbnail   String?  // Supabase Image URL
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creatorId   String?  // Creator (User) ID
+  modules   Module[]
+  purchases Purchase[]
+  cartItems CartItem[]
+  creator   User?    @relation(fields: [creatorId], references: [id])
+}
+
+// ==========================================
+// MODULE MODEL (Ek course ke andar multiple modules ho sakte hain)
+// ==========================================
+model Module {
+  id        String   @id @default(uuid())
+  title     String
+  order     Int      // Module ko sort karne ke liye (1, 2, 3...)
+  courseId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  videos Video[]
+}
+
+// ==========================================
+// VIDEO MODEL (Lesson jo Bunny.net par hoga)
+// ==========================================
+model Video {
+  id            String   @id @default(uuid())
+  title         String
+  videoUrl      String   // Bunny.net ka HLS stream URL
+  duration      Int?     // Seconds mein
+  order         Int      // Sort order
+  isPublished   Boolean  @default(true)  // Naya field
+  isVerified    Boolean  @default(false) // Admin approval for first video
+  isFreePreview Boolean  @default(false) // Kya ye video bina kharide dekhi ja sakti hai?
+  moduleId      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  module   Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress Progress[]
+}
+
+// ==========================================
+// PURCHASE MODEL (Payments Track karne ke liye)
+// ==========================================
+model Purchase {
+  id              String   @id @default(uuid())
+  userId          String
+  courseId        String
+  amount          Float
+  status          String   @default("PENDING") // SUCCESS, FAILED
+  cashfreeOrderId String?  @unique // Cashfree ka order ID yaha aayega
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId]) // Ek user ek course ko ek hi baar kharid sakta hai
+}
+
+// ==========================================
+// PROGRESS MODEL (Video kitni dekh li user ne)
+// ==========================================
+model Progress {
+  id          String   @id @default(uuid())
+  userId      String
+  videoId     String
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+}
+
+// ==========================================
+// CART MODELS
+// ==========================================
+model Cart {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  courseId  String
+  createdAt DateTime @default(now())
+
+  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, courseId])
+}
