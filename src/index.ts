@@ -25,6 +25,15 @@ app.use(cors({
     credentials: true
 }));
 
+// Root route
+app.get("/", (req, res) => {
+  res.json({ 
+    message: "Welcome to Seekho Business API",
+    version: "1.0.0",
+    status: "running"
+  });
+});
+
 import webhookRouter from "./routes/webhook";
 
 // Webhook needs raw body, so mount it BEFORE express.json()
