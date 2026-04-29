@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon src/index.ts",
-    "build": "npx prisma generate && tsc",
+    "build": "prisma generate && tsc",
     "postinstall": "npm run build",
     "start": "node dist/index.js"
   },
@@ -17,6 +17,7 @@
     "express": "^4.19.0",
     "ioredis": "^5.3.0",
     "multer": "^1.4.5-lts.1",
+    "prisma": "^5.0.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {
@@ -25,7 +26,6 @@
     "@types/multer": "^1.4.11",
     "@types/node": "^20.0.0",
     "nodemon": "^3.1.0",
-    "prisma": "^5.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.0.0"
   }
