@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon src/index.ts",
     "build": "npx prisma generate && tsc",
+    "postinstall": "npm run build",
     "start": "node dist/index.js"
   },
   "dependencies": {
